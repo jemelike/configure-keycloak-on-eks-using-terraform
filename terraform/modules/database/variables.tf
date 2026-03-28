@@ -25,11 +25,11 @@ variable "vpc_id" {
 }
 
 variable "database_subnets" {
-  type        = list
+  type        = list(any)
   description = "Keycloak VPC database subnets"
 }
 
 variable "database_subnets_cidr_blocks" {
-  type        = list
+  type        = list(any)
   description = "Keycloak VPC cidr_blocks of database subnets"
 }

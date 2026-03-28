@@ -12,16 +12,6 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-provider "aws" {
-  region = "us-east-1"
-  default_tags {
-    tags = {
-      Environment = "dev"
-      Name        = "terraform keycloak demo provider tag"
-    }
-  }
-}
-
 provider "kubernetes" {
   host                   = data.aws_eks_cluster.cluster.endpoint
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
@@ -30,11 +20,11 @@ provider "kubernetes" {
 }
 
 provider "helm" {
-  kubernetes {
+  kubernetes = {
     host                   = data.aws_eks_cluster.cluster.endpoint
     cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
     token                  = data.aws_eks_cluster_auth.cluster.token
-    }
+  }
 }
 
 
@@ -53,16 +43,16 @@ data "aws_eks_cluster_auth" "cluster" {
 }
 
 locals {
-  account_id     = data.aws_caller_identity.current.account_id
-}
+  account_id = data.aws_caller_identity.current.account_id
+  }
 
 module "eks-kubeconfig" {
-  source     = "hyperbadger/eks-kubeconfig/aws"
-  version    = "1.0.0"
+  source  = "hyperbadger/eks-kubeconfig/aws"
+  version = "1.0.0"
 
   depends_on = [module.eks]
-  cluster_id =  module.eks.cluster_id
-  }
+  cluster_id = module.eks.cluster_id
+}
 
 resource "local_file" "kubeconfig" {
   content  = module.eks-kubeconfig.kubeconfig
@@ -73,35 +63,35 @@ module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "5.1.0"
 
-  name                 = var.cluster_name
-  cidr                 = "172.16.0.0/16"
-  azs                  = data.aws_availability_zones.available.names
-  private_subnets      = ["172.16.1.0/24", "172.16.2.0/24", "172.16.3.0/24"]
-  public_subnets       = ["172.16.4.0/24", "172.16.5.0/24", "172.16.6.0/24"]
-  database_subnets     = ["172.16.10.0/24", "172.16.11.0/24", "172.16.12.0/24"]
-  enable_nat_gateway   = true
-  single_nat_gateway   = true
-  enable_dns_hostnames = true
-  map_public_ip_on_launch = false
-  create_flow_log_cloudwatch_log_group = true
-  flow_log_cloudwatch_iam_role_arn = aws_iam_role.cw_role.arn
+  name                                            = var.cluster_name
+  cidr                                            = "172.16.0.0/16"
+  azs                                             = data.aws_availability_zones.available.names
+  private_subnets                                 = ["172.16.1.0/24", "172.16.2.0/24", "172.16.3.0/24"]
+  public_subnets                                  = ["172.16.4.0/24", "172.16.5.0/24", "172.16.6.0/24"]
+  database_subnets                                = ["172.16.10.0/24", "172.16.11.0/24", "172.16.12.0/24"]
+  enable_nat_gateway                              = true
+  single_nat_gateway                              = true
+  enable_dns_hostnames                            = true
+  map_public_ip_on_launch                         = false
+  create_flow_log_cloudwatch_log_group            = true
+  flow_log_cloudwatch_iam_role_arn                = aws_iam_role.cw_role.arn
   flow_log_cloudwatch_log_group_retention_in_days = 30
-  flow_log_destination_type = "cloud-watch-logs"
-  flow_log_file_format = "plain-text"
-  flow_log_traffic_type = "ALL"
+  flow_log_destination_type                       = "cloud-watch-logs"
+  flow_log_file_format                            = "plain-text"
+  flow_log_traffic_type                           = "ALL"
 
   public_subnet_tags = {
-    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
-    "kubernetes.io/role/elb"                    = "1"
+    "kubernetes.io/cluster/${var.cluster_name}"     = "shared"
+    "kubernetes.io/role/elb"                        = "1"
     "k8s.io/cluster-autoscaler/${var.cluster_name}" = "owned"
-    "kubernetes.io/role/internal-elb"           = "true"
+    "kubernetes.io/role/internal-elb"               = "true"
   }
 
   private_subnet_tags = {
-    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
-    "kubernetes.io/role/internal-elb"           = "1"
+    "kubernetes.io/cluster/${var.cluster_name}"     = "shared"
+    "kubernetes.io/role/internal-elb"               = "1"
     "k8s.io/cluster-autoscaler/${var.cluster_name}" = "owned"
-    "kubernetes.io/role/internal-elb"           = "true"
+    "kubernetes.io/role/internal-elb"               = "true"
   }
 
   database_subnet_tags = {
@@ -222,7 +212,7 @@ resource "aws_cloudwatch_log_group" "flow_logs" {
   depends_on = [
     aws_kms_key.this
   ]
-  name = "vpc-flow-logs"
+  name       = "vpc-flow-logs"
   kms_key_id = aws_kms_key.this.arn
 }
 
@@ -230,22 +220,22 @@ module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "18.31.2"
 
-  cluster_name    = var.cluster_name
-  cluster_version = var.cluster_version
-  subnet_ids        = module.vpc.private_subnets
-  vpc_id = module.vpc.vpc_id
+  cluster_name                    = var.cluster_name
+  cluster_version                 = var.cluster_version
+  subnet_ids                      = module.vpc.private_subnets
+  vpc_id                          = module.vpc.vpc_id
   cluster_endpoint_public_access  = true
-  create_cloudwatch_log_group = true
-  cluster_enabled_log_types = ["api", "audit", "authenticator","controllerManager","scheduler"]
+  create_cloudwatch_log_group     = true
+  cluster_enabled_log_types       = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
   cloudwatch_log_group_kms_key_id = aws_kms_key.this.arn
   create_kms_key                  = true
   cluster_encryption_config = [{
-    resources = ["secrets"]
+    resources        = ["secrets"]
     provider_key_arn = aws_kms_key.this.arn
   }]
 
-  kms_key_description             = "KMS Secrets encryption for EKS cluster."
-  kms_key_enable_default_policy   = true
+  kms_key_description           = "KMS Secrets encryption for EKS cluster."
+  kms_key_enable_default_policy = true
 
   eks_managed_node_groups = {
     first = {
@@ -311,22 +301,19 @@ resource "helm_release" "ingress" {
   repository = "https://aws.github.io/eks-charts"
   version    = "1.4.7"
 
-  set {
+  set = [{
     name  = "autoDiscoverAwsRegion"
     value = "true"
-  }
-  set {
+    }, {
     name  = "autoDiscoverAwsVpcID"
     value = "true"
-  }
-  set {
+    }, {
     name  = "clusterName"
     value = var.cluster_name
-  }
-  set {
-    name = "SubnetsClusterTagCheck"
+    }, {
+    name  = "SubnetsClusterTagCheck"
     value = "false"
-  }
+  }]
 }
 
 resource "aws_security_group" "lb_security_group" {
@@ -349,9 +336,9 @@ resource "aws_security_group" "lb_security_group" {
   }
 
   tags = merge({
-    Name                                      = "${var.cluster_name}-lb-sg"
+    Name                                        = "${var.cluster_name}-lb-sg"
     "kubernetes.io/cluster/${var.cluster_name}" = "owned"
-    "kubernetes:application"                  = "kube-ingress-aws-controller"
+    "kubernetes:application"                    = "kube-ingress-aws-controller"
   })
 }
 
@@ -359,24 +346,24 @@ resource "aws_security_group" "lb_security_group" {
 data "kubectl_path_documents" "kube_configs" {
   pattern = "${path.module}/templates/*.tftpl"
   vars = {
-    account_number = local.account_id
+    account_number      = local.account_id
     nodegroup_role_name = module.eks.eks_managed_node_groups.first.iam_role_name
-    route53_zone_id = var.route53_zone_id
-    region = var.region
-    domain_name = var.route53_zone_name
-    }
+    route53_zone_id     = var.route53_zone_id
+    region              = var.region
+    domain_name         = var.route53_zone_name
+  }
 }
 # Resource to get around Terraform count bug. We use this so that Terraform provider is aware of the number of vars at runtime. This resource should mimic the above resource.
 # Link to bug: https://github.com/gavinbunney/terraform-provider-kubectl/issues/58
 data "kubectl_path_documents" "kube_config_count" {
   pattern = "${path.module}/templates/*.tftpl"
   vars = {
-    account_number = ""
+    account_number      = ""
     nodegroup_role_name = ""
-    route53_zone_id = ""
-    region = ""
-    domain_name = ""
-    }
+    route53_zone_id     = ""
+    region              = ""
+    domain_name         = ""
+  }
 }
 
 resource "kubectl_manifest" "configs_apply" {
@@ -386,15 +373,31 @@ resource "kubectl_manifest" "configs_apply" {
 
 # ============= metric server ============= #
 terraform {
-  required_version = "~>1.3.9"
-  
+  required_version = "~> 1.14.4"
+
   required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.90"
+    }
+
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~> 3.1"
+    }
+
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 3.0"
+    }
+
     kubectl = {
       source  = "gavinbunney/kubectl"
       version = "1.14.0"
     }
   }
 }
+
 
 provider "kubectl" {
   host                   = data.aws_eks_cluster.cluster.endpoint
