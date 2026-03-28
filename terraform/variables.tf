@@ -48,3 +48,9 @@ variable "cluster_version" {
   type        = string
   description = "EKS cluster version"
 }
+
+variable "aws_region" {
+  type        = string
+  description = "AWS region for all resources in this stack"
+  default     = "us-east-2"
+}

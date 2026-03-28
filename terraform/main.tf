@@ -12,16 +12,23 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-locals {
-  region = data.aws_region.current.name
-}
-
 output "db_hostname" {
   value = module.dev_database.db_hostname
 }
 
 output "cert_arn" {
   value = var.cert_arn
+}
+
+provider "aws" {
+  region = var.aws_region
+
+  default_tags {
+    tags = {
+      Environment = "dev"
+      Name        = "terraform keycloak demo provider tag"
+    }
+  }
 }
 
 module "dev_cluster" {
@@ -31,7 +38,7 @@ module "dev_cluster" {
   cert_arn          = var.cert_arn
   environment       = var.environment
   cluster_version   = var.cluster_version
-  region            = local.region
+  region            = var.aws_region
 }
 
 module "dev_autoscaler" {

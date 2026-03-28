@@ -13,11 +13,11 @@
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 provider "helm" {
-  kubernetes {
+  kubernetes = {
     host                   = var.cluster_endpoint
     cluster_ca_certificate = base64decode(var.cluster_certificate_authority_data)
 
-    exec {
+    exec = {
       api_version = "client.authentication.k8s.io/v1beta1"
       command     = "aws"
       args        = ["eks", "get-token", "--cluster-name", var.cluster_name]
@@ -26,7 +26,7 @@ provider "helm" {
 }
 
 
-resource "kubernetes_namespace" "cluster_autoscaler" {
+resource "kubernetes_namespace_v1" "cluster_autoscaler" {
   count = (var.enabled && var.create_namespace && var.namespace != "kube-system") ? 1 : 0
 
   metadata {
@@ -43,30 +43,22 @@ resource "helm_release" "cluster_autoscaler" {
   version    = "9.25.0"
   namespace  = var.namespace
 
-  set {
+  set = [{
     name  = "fullnameOverride"
     value = "aws-cluster-autoscaler"
-  }
-
-  set {
+    }, {
     name  = "autoDiscovery.clusterName"
     value = var.cluster_name
-  }
-
-  set {
+    }, {
     name  = "awsRegion"
     value = var.aws_region
-  }
-
-  set {
+    }, {
     name  = "rbac.serviceAccount.name"
     value = "cluster-autoscaler"
-  }
-
-  set {
+    }, {
     name  = "rbac.serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
     value = aws_iam_role.kubernetes_cluster_autoscaler[0].arn
-  }
+  }]
 
   values = [
     yamlencode(var.settings)

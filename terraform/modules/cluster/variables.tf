@@ -26,7 +26,7 @@ variable "environment" {
 variable "cluster_name" {
   type        = string
   description = "EKS cluster name"
-  default = "keycloak-demo"
+  default     = "keycloak-demo"
 }
 
 variable "cluster_version" {
@@ -37,7 +37,7 @@ variable "cluster_version" {
 variable "instance_type" {
   type        = string
   description = "EC2 Instance Type"
-  default = "t3.large"
+  default     = "t3.large"
 }
 
 variable "kms_alias" {

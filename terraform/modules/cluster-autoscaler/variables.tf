@@ -7,13 +7,13 @@ variable "enabled" {
 variable "cluster_name" {
   type        = string
   description = "The name of the cluster."
-  default = "keycloak-demo"
+  default     = "keycloak-demo"
 }
 
 variable "aws_region" {
   type        = string
   description = "AWS region where secrets are stored."
-  default     = "us-east-1"
+  default     = "us-east-2"
 }
 
 variable "cluster_identity_oidc_issuer" {
