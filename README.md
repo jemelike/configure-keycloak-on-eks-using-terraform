@@ -30,3 +30,6 @@ Run command
 ```shell
 make destroy
 ```
+
+./get_profile.ps1
+aws sts get-caller-identity
